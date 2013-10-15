@@ -1,102 +1,136 @@
-#!/bin/bash
-# /usr/local/bin/netconf
-# Author: backenfutter
+#!/bin/bash 
+# Copyright (C) 2011  [Brian Wiborg <baccenfutter@c-base.org>]
 #
-# Credits : grenouille
-# 
-# INSTALLATION
-# ============
-# Requires wpa_supplicant and encfs to be installed. Paste this to your terminal:
-# sudo aptitude install wpa_supplicant encfs
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 3 of the License, or (at your option) any later
+# version.
 #
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 #
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, see <http://www.gnu.org/licenses/>.
+#
+# Special thanks to grenouille for the original script skel. The
+# auto-documentation feature was initially his idea.
+
 # This script requires a wpa_supplicant configuration file named c-base.conf
-# in an encfs folder /etc/wpa_supplicant/c-base/ 
-# 
+# in the encfs dir /etc/wpa_supplicant/c-base/
+#
 # Paste this to your terminal to set it up as required:
-# sudo encfs /etc/wpa_supplicant/.c-base /etc/wpa_supplicant/c-base && vi /etc/wpa_supplicant/c-base/c-base.conf
+# sudo encfs /etc/wpa_supplicant/.c-base /etc/wpa_supplicant/c-base && vi
+# /etc/wpa_supplicant/c-base/c-base.conf
 #
 # Example c-base.conf at http://wiki.c-base.org/coredump/wlan-c-base-crew
-#
 
-export LC_ALL=C
+IF_WIRE="eth0"
+IF_WIFI="wlan0"
 
-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+declare -a NETCONF_ESSIDS
+declare -a NETCONF_INTERFACES
 
-function reset_interface {
-	echo "Reseting interfaces..."
-	killall wvdial &> /dev/null
-	killall dhclient  &> /dev/null
-	killall wpa_supplicant &> /dev/null
-	ifconfig eth0 down
-	ifconfig wlan0 down
-	modprobe -r iwlagn      # These two lines eventually need to be
-	modprobe iwlagn         # set to _your_ WLAN kernel module name
-	sleep 1
-	cat /dev/null > /etc/resolv.conf
+declare ENCFS_MOUNTPOINT="/etc/wpa_supplicant/wpa/"
+declare ENCFS_DIR="/etc/wpa_supplicant/.wpa/"
+
+ENCFS=$(which encfs)
+WPA_SUPPLICANT=$(which wpa_supplicant)
+IWCONFIG=$(which iwconfig)
+IWLIST=$(which iwlist)
+
+# check for required tools
+for tool in $ENCFS $WPA_SUPPLICANT $IWCONFIG $IWLISTl; do
+    [ -x $tool ] || {
+        echo "I need $tool for running but cannot find it, aborting."
+        exit 1
+    }
+done
+
+function print_gnu_disclaimer () {
+    sed '/^$/q' $0 | tail -n +2 | sed 's/^# *//'
 }
 
-function test_connectivity {
-	if ping -c 1 google.de &> /dev/null ; then
-		echo "[$1] Verbindungsaufbau abgeschlossen"
-	else
-		echo "Probleme beim Verbindungsaufbau..."
-	fi
+reset_interfaces() {
+    echo "Resetting interfaces..."
+    pgrep wvdial &>/dev/null && killall wvdial
+    pgrep dhcpcd &>/dev/null && killall dhcpcd
+    pgrep wpa_supplicant &>/dev/null && killall wpa_supplicant
+    NETCONF_INTERFACES=( $(cat /proc/net/dev | grep -v "sit" | tail -n +4 | awk '{ print $1 }' | sed 's/\://')  )
+    for iface in $NETCONF_INTERFACES; do
+        ifconfig $iface down
+    done
+    :> /etc/resolv.conf
+}
+
+scan_essids() {
+    echo "Putting interface up..."
+    ifconfig $IF_WIFI up
+    echo "Scanning for ESSIDs..."
+    while read line; do
+        NETCONF_ESSIDS+=( "$line" )
+    done < <(iwlist wlan0 scan | sed -n '/Encryption key:off/ {n;s/.*:"\([^"]*\).*/\1/p}')
+    #done < <(iwlist wlan0 scan | sed -n '/Encryption key:off/ {s/.*:\(.*\)//;h;n;s/.*:"\([^"]*\).*/\1/;G;s/\n/\t/;p}')
+    #done < <($IWLIST $IF_WIFI scan | grep "Encryption key:" -A1 | grep -v '\-\-' | awk 'ORS=(FNR%2)?FS:RS' | grep -v "\<on\>" | sed 's/.*key:\([^ ]\+\).*ESSID:\([^$]\+\)/\2/g' | sed 's/\"//g')
+    count=0; for essid in "${NETCONF_ESSIDS[@]}"; do
+        echo "$count - $essid"
+        (( count += 1 ))
+    done
+}
+
+connect_to_wpa_wifi() {
+    declare configfile="$1"
+    reset_interfaces
+    ifconfig $IF_WIFI up
+    if mount | grep ${ENCFS_MOUNTPOINT%/} > /dev/null 2>&1; then
+        echo "Encrypted filesystem allready mounted."
+    else
+        $ENCFS "$ENCFS_DIR" "$ENCFS_MOUNTPOINT"
+    fi
+    if [ $? -eq 0 ]; then
+        $WPA_SUPPLICANT -B -Dwext -i$IF_WIFI -c "$configfile"
+        echo "Unmounting encrypted filesystem..."
+        fusermount -u "$ENCFS_MOUNTPOINT"
+        echo "Obtaining IP address..."
+    fi
 }
 
 case "$1" in
-1|lan)                          # c-base crewlan
-        reset_interface
-        ifconfig eth0 up
-        dhclient eth0
-        test_connectivity "lan"
-		;;
-
-2|c-base)                       # c-base wlan => cbase1
-        reset_interface
-        ifconfig wlan0 up
-        sleep 3
-        iwconfig wlan0 essid cbase1
-        dhclient wlan0
-        test_connectivity "cbase1"
-        ;;
-
-3|c-base-crew)                  # cbase crew-wlan wpa-eap 
-        reset_interface
-        ifconfig wlan0 up
-        if [ `mount|grep -o /etc/wpa_supplicant/c-base` ] ; then
-             echo  "> enfs already mounted"
-        else
-               encfs -i 1 /etc/wpa_supplicant/.c-base /etc/wpa_supplicant/c-base
-        fi 
-        sleep 1
-        wpa_supplicant  -B -i wlan0 -c/etc/wpa_supplicant/c-base/c-base.conf
-        #wpa_supplicant  -ddd -i wlan0 -c/etc/wpa_supplicant/c-base/c-base.conf
-        sleep 3
-        iwconfig 
-        fusermount -u /etc/wpa_supplicant/c-base/ 
-        dhclient wlan0
-        test_connectivity "c-base-crew"
-        ;;
-
-r|reset)                                # reset the interfaces => »go offline«
-        reset_interface
-        ;;
-
-params)
-        echo `grep \) $0 | grep -v grep | grep -v '*'|grep -v 'params)'| sed s/\)// |sed s/\#.*//| sed s/\|/\ /g`
-        ;;
-
-*)
-        grep "#" $0 | grep -v ")" | grep -v "supplicant"
-        echo "usage: `basename $0` OPTION"
-        echo "OPTIONS:"
-        echo "================================="
-        grep \) $0 | grep -v grep | grep -v '*'|grep -v 'params)'|sed s/\)//  
-        echo
+r|reset)            # reset the interfaces => »go offline«
+    reset_interfaces
+    ;;
+1|lan)              # Regular LAN with DHCP
+    reset_interfaces
+    ifconfig $IF_WIRE up
+    dhcpcd $IF_WIRE
+    ;;
+2|wlan)             # Regular WLAN with DHCP
+    reset_interfaces
+    scan_essids
+    read -p "Enter the number of the ESSID you wish to connect to: " answer
+    if [ $answer -lt 0 ] || [ $answer -gt ${#NETCONF_ESSIDS} ]; then
+        echo "go away!"
         exit 1
-        ;;
+    else
+        echo "Connecting to ${NETCONF_ESSIDS[answer]}"
+        ifconfig $IF_WIFI up
+        $IWCONFIG $IF_WIFI essid "${NETCONF_ESSIDS[answer]}"
+        dhcpcd $IF_WIFI
+    fi
+    ;;
+3|c-base-crew)      # c-base crew wifi
+    connect_to_wpa_wifi "/etc/wpa_supplicant/wpa/c-base-crew.cfg"
+    dhcpcd $IF_WIFI
+    ;;
+*)
+    print_gnu_disclaimer
+    echo "Usage: $(basename $0) [ r | 1-n | net-name ]"
+    echo "PARAMS:"
+    echo "================================="
+    grep .*\|.*\) $0 | grep -v grep | grep -v '*'|grep -v 'params)'|sed s/\)//  
+    echo
+    exit 1
+    ;;
 esac
 
-exit 0
-
+echo "Done."
