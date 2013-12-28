@@ -1,2 +1,3 @@
+v0.2.1, 2013-12-28 -- Release preps...
 v0.2.0, 2013-12-28 -- Moved to python.
 v0.1.0, 2013-12-01 -- Initial release.
