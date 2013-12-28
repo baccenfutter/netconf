@@ -20,10 +20,6 @@ ip(iface)                           # set address on interface
 gw()                                # set default gateway
 dns()                               # set dns
 
-# if you want to verify your successfull settings, you can use the
-# print_config helpers like this:
-
+# if you want to verify your successfull settings:
 print                               # print an empty line
 print iface.print_config()          # print current iface configuration
-print gw.print_config()             # print current default gateway
-print dns.print_config()            # print current dns configuration
