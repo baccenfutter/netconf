@@ -1,0 +1,23 @@
+#!/usr/bin/env  python2
+# -*- coding: utf-8 -*-
+#
+# Example: wpa_supplicant with static IPv4
+
+import net_conf as nc                       # import net_conf itself
+from net_conf.providers import *            # import all necessary providers
+
+iface = Iface('wlan0')                      # configure wlan0
+wpa = Wpa('/etc/wpa_supplicant/foo.conf')   # configure wpa_supplicant
+ip = Address('192.168.1.100/24')            # configure IPv4 address
+gw = Gateway('192.168.1.1')                 # configure default gateway
+dns = Resolver(                             # configure DNS
+    '192.168.1.1',                          # - nameserver
+    'myplace.local',                        # - domain (optional)
+    'myplace.local some.other.places',      # - search (optional)
+)
+
+nc.reset()                                  # reset all ifaces and kill all daemons
+wifi(iface)                                 # connect wifi
+ip(iface)                                   # set IPv4 address
+gw()                                        # set default gateway
+dns()                                       # set DNS
