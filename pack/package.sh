@@ -42,11 +42,10 @@ trap cleanup QUIT
 echo $workdir
 
 mkdir -p "$sourcedir"
-mkdir -p "$sourcedir/bin"
 
 # copy source to working directory
 cp ../*.py "$sourcedir"
-cp ../netconf.sh "$projectdir/bin/"
+cp ../netconf.sh "$projectdir"
 
 # copy meta-files to working directory
 cp *.txt "$projectdir"
