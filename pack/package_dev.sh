@@ -77,12 +77,16 @@ echo "$setup_stanza" > "$projectdir/setup.py"
 cd "$projectdir"
 python setup.py sdist
 
-# register and upload
+# install to local environment
 read -n 1 -p "Can haz install: ${pv} [y|N]: " answer
 echo
 if [[ ! "$answer" == y ]]; then
-echo "Bailing out by user request."
-    exit 0
+    python setup.py develop
 fi
 
-python setup.py develop
+# register and upload
+read -n 1 -p "Can haz upload: ${pv} [y|N]: " answer
+echo
+if [[ ! "$answer" == y ]]; then
+    python setup.py sdist upload
+fi
