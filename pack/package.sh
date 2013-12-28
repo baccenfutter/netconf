@@ -42,11 +42,10 @@ trap cleanup QUIT
 echo $workdir
 
 mkdir -p "$sourcedir"
-mkdir -p "$sourcedir/bin"
 
 # copy source to working directory
 cp ../*.py "$sourcedir"
-cp ../netconf.sh "$projectdir/bin/"
+cp ../netconf.sh "$projectdir"
 
 # copy meta-files to working directory
 cp *.txt "$projectdir"
@@ -67,7 +66,7 @@ url='http://pypi.python.org/pypi/${pn}/',
 license='LICENSE.txt',
 description='${description}',
 long_description=open('README.txt').read(),
-install_requires=[],
+install_requires=['ipaddr==2.1.7'],
 )
 "
 
@@ -77,12 +76,17 @@ echo "$setup_stanza" > "$projectdir/setup.py"
 cd "$projectdir"
 python setup.py sdist
 
-# register and upload
+# install to local environment
 read -n 1 -p "Can haz install: ${pv} [y|N]: " answer
 echo
-if [[ ! "$answer" == y ]]; then
-echo "Bailing out by user request."
-    exit 0
+if [[ "$answer" == y ]]; then
+    python setup.py develop
 fi
 
-python setup.py develop
+# register and upload
+read -n 1 -p "Can haz upload: ${pv} [y|N]: " answer
+echo
+if [[ "$answer" == y ]]; then
+    python setup.py register
+    python setup.py sdist upload
+fi

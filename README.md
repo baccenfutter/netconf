@@ -13,7 +13,7 @@ Installation
 To install Net-Conf into a virtualenv simply type:
 
 ```
-# pip install net_conf
+# git clone github.com/baccenfutter/netconf.git
 # ln -s $PWD/net_conf/netconf.sh /usr/local/bin/netconf
 # netconf --help
 ```
