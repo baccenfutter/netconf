@@ -1,0 +1,29 @@
+#!/usr/bin/env  python2
+# -*- coding: utf-8 -*-
+#
+# Example: Advanced -> Cable with static IPv4
+
+import net_conf as nc               # import net_conf itself
+from net_conf.providers import *    # import all necessary providers
+
+iface = Iface('eth0')               # use eth0
+ip = Address('1.2.3.4/24')          # configure 1.2.3.4/24 as IPv4 address
+gw = Gateway('1.2.3.1')             # configure 1.2.3.1 as default gateway
+dns = Resolver(                     # configure dns
+    '1.2.3.1',                      # nameserver is 1.2.3.1
+    'myplace.local'                 # domain is myplace.local
+    'myplace.local other.places'    # search is myplace.local and other.places
+
+nc.reset()                          # reset all interfaces and kill all
+                                    # running daemons
+ip(iface)                           # set address on interface
+gw()                                # set default gateway
+dns()                               # set dns
+
+# if you want to verify your successfull settings, you can use the
+# print_config helpers like this:
+
+print                               # print an empty line
+print iface.print_config()          # print current iface configuration
+print gw.print_config()             # print current default gateway
+print dns.print_config()            # print current dns configuration

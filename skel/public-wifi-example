@@ -1,0 +1,18 @@
+#!/usr/bin/env  python2
+# -*- coding: utf-8 -*-
+#
+# Example: Advanced -> Public wifi
+
+import net_conf as nc                   # import net_conf itself
+from net_conf.providers import *        # import all necessary providers
+from net_conf.scanners import IwScan    # import IwScan for scanning wifis
+
+iface = Iface('wlan0')                  # configure wlan0
+dhcp = Dhcp('dhcpcd')                   # configure dhcpcd as DHCP client
+scanner = IwScan()                      # initialize a wifi scanner
+
+nc.reset()                              # reset all ifaces and kill all daemons
+scanner(iface)                          # scan wifis via iface
+print scanner                           # print scan results
+scanner.selection()                     # call connect-selector
+dhcp(iface)                             # request DHCP lease
