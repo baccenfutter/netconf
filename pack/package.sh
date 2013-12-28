@@ -66,7 +66,7 @@ url='http://pypi.python.org/pypi/${pn}/',
 license='LICENSE.txt',
 description='${description}',
 long_description=open('README.txt').read(),
-install_requires=[],
+install_requires=['ipaddr==2.1.7'],
 )
 "
 
