@@ -14,5 +14,3 @@ dhcp = Dhcp('dhcpcd')               # use dhcpcd as DHCP client.
 
 nc.reset()                          # reset all ifaces and kill all daemons
 dhcp(iface)                         # request DHCP lease
-
-# vim: set ft=python:
