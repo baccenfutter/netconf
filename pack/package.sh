@@ -80,13 +80,13 @@ python setup.py sdist
 # install to local environment
 read -n 1 -p "Can haz install: ${pv} [y|N]: " answer
 echo
-if [[ ! "$answer" == y ]]; then
+if [[ "$answer" == y ]]; then
     python setup.py develop
 fi
 
 # register and upload
 read -n 1 -p "Can haz upload: ${pv} [y|N]: " answer
 echo
-if [[ ! "$answer" == y ]]; then
+if [[ "$answer" == y ]]; then
     python setup.py sdist upload
 fi
