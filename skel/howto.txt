@@ -1,0 +1,13 @@
+Configuration HowTo
+===================
+
+Take the following steps to create and configure a new network:
+ - Read the examples, first.
+ - Find a descriptive name.
+ - Create the file: 
+ 
+    ~/.config/net_conf/mydescriptivename.py
+ 
+ - You can now connect to this network as follows:
+ 
+    # netconf mydescriptivename

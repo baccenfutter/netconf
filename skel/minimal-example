@@ -1,0 +1,18 @@
+#!/usr/bin/env  python2
+# -*- coding: utf-8 -*-
+#
+# Example: Minimal -> Cable with DHCP
+
+import net_conf as nc               # import net_conf itself.
+from net_conf.providers import *    # import all necessary providers.
+
+iface = Iface('eth0')               # configure eth0.
+dhcp = Dhcp('dhcpcd')               # use dhcpcd as DHCP client.
+
+# Note: DON'T call nc.reset() before you have loaded all configurations,
+# as this prevents your connection from dropping in case of any errors.
+
+nc.reset()                          # reset all ifaces and kill all daemons
+dhcp(iface)                         # request DHCP lease
+
+# vim: set ft=python:
