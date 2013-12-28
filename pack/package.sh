@@ -88,5 +88,6 @@ fi
 read -n 1 -p "Can haz upload: ${pv} [y|N]: " answer
 echo
 if [[ "$answer" == y ]]; then
+    python setup.py register
     python setup.py sdist upload
 fi
