@@ -3,7 +3,8 @@ net-conf
 ========
 
 Net-Conf is a commandline-based network manager. It is specifically
-designed for convenient use in a root-shell with scriptability in mind.
+designed for use in a root-shell. It will not flip-flap around
+networks unless you explicitly tell it to!
 
 
 Installation
